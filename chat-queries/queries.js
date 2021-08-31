@@ -9,6 +9,29 @@ const pool = new Pool({
   port: 5432,
 });
 
+const getSocketMessages = () => {
+  return new Promise(res => {
+    pool.query(
+      "SELECT * FROM messages ORDER BY id DESC LIMIT 10",
+      (err, results) => {
+        if (err) throw err
+        res(results.rows)
+      }
+    )
+  })
+}
+
+const createSocketMessage = message => new Promise(res => {
+  pool.query(
+    'INSERT INTO messages (text, username) VALUES ($1, $2) RETURNING text, username, created_at',
+    [message.text, message.username],
+    (err,results) => {
+      if (err) throw err
+      res(results.row)
+    }
+  )
+})
+
 const getMessages = (req, res) => {
   pool.query(
     "SELECT * FROM messages ORDER BY id DESC LIMIT 10",
@@ -20,19 +43,6 @@ const getMessages = (req, res) => {
     }
   );
 };
-
-// const createMessage = (req, res) => {
-//   const { text, username } = req.body;
-//   pool.query(
-//     "INSERT INTO messages (text, username) VALUES ($1, $2) RETURNING text, username, created_at",
-//     [text, username],
-//     (err, results) => {
-//       if (err) {
-//         res.status(420).send(err)}
-//       res.status(201).send(results.rows);
-//     }
-//   );
-// };
 
 const createMessage = (request, response) => {
   console.log(request)
@@ -49,4 +59,5 @@ const createMessage = (request, response) => {
   );
 };
 
-module.exports = { getMessages, createMessage };
+
+module.exports = { getMessages, createMessage, getSocketMessages, createSocketMessage };
